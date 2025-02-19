@@ -5,28 +5,7 @@ import { Button } from "@/components/ui/button";
 import { BookNoteInput } from "@/components/BookNoteInput";
 import { ReadingBook, BookNote, ReadingStatus } from "@/app/types/BookTypes";
 import { Input } from "@/components/ui/input";
-import {
-  Search,
-  Filter,
-  SortDesc,
-  Edit2,
-  Trash2,
-  Star,
-  Clock,
-} from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Search, Edit2, Trash2, Star, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import { toast } from "@/hooks/use-toast";
@@ -81,12 +60,9 @@ const BookPage = () => {
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState<BookNote[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<"date" | "page">("date");
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState("");
   const [imageError, setImageError] = useState(false);
-  const [activeTab, setActiveTab] = useState("all");
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -167,25 +143,14 @@ const BookPage = () => {
 
   const filteredAndSortedNotes = notes
     .filter((note) => {
-      if (activeTab === "questions") return note.type === "question";
-      if (activeTab === "highlights") return note.type === "sentiment";
-      return true;
+      const term = searchTerm.toLowerCase();
+      return (
+        note.title.toLowerCase().includes(term) ||
+        note.content.toLowerCase().includes(term) ||
+        note.type.toLowerCase().includes(term)
+      );
     })
-    .filter((note) => {
-      if (filterType === "all") return true;
-      return note.type === filterType;
-    })
-    .filter(
-      (note) =>
-        note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        note.category?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => {
-      if (sortBy === "date") {
-        return b.createdAt.getTime() - a.createdAt.getTime();
-      }
-      return (a.page || 0) - (b.page || 0);
-    });
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
   if (loading) {
     return (
@@ -331,168 +296,101 @@ const BookPage = () => {
         <div className="bg-white rounded-lg shadow-md p-8">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">Notes & Thoughts</h2>
-            <div className="flex gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <Input
-                  placeholder="Search notes..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
-                />
-              </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon">
-                    <Filter className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setFilterType("all")}>
-                    All Notes
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilterType("note")}>
-                    📝 Notes
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilterType("sentiment")}>
-                    💭 Sentiments
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilterType("critique")}>
-                    🔍 Critiques
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilterType("question")}>
-                    ❓ Questions
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() =>
-                        setSortBy(sortBy === "date" ? "page" : "date")
-                      }
-                    >
-                      <SortDesc className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {`Sort by ${sortBy === "date" ? "page number" : "date"}`}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Input
+                placeholder="Search notes (by title, content, type)..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 w-64"
+              />
             </div>
           </div>
 
-          <BookNoteInput
-            onAddNote={handleAddNote}
-            currentPage={book.currentPage}
-          />
+          <BookNoteInput onAddNote={handleAddNote} />
 
-          <div className="mt-8">
-            <Tabs
-              value={activeTab}
-              onValueChange={setActiveTab}
-              className="w-full"
-            >
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="all">All Notes</TabsTrigger>
-                <TabsTrigger value="highlights">Highlights</TabsTrigger>
-                <TabsTrigger value="questions">Questions</TabsTrigger>
-              </TabsList>
-            </Tabs>
+          <div className="mt-8 space-y-4">
+            {filteredAndSortedNotes.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No notes found {searchTerm && "matching your search"}
+              </div>
+            ) : (
+              filteredAndSortedNotes.map((note) => (
+                <Card
+                  key={note.id}
+                  className="p-4 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-2">
+                      {note.emoji && <span>{note.emoji}</span>}
+                      <Badge variant="secondary">
+                        {note.type.charAt(0).toUpperCase() + note.type.slice(1)}
+                      </Badge>
+                      {note.page && (
+                        <span className="text-sm text-gray-600">
+                          Page {note.page}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setEditingNote(note.id);
+                          setEditingContent(note.content);
+                        }}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteNote(note.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
 
-            <div className="mt-4 space-y-4">
-              {filteredAndSortedNotes.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  No notes found {searchTerm && "matching your search"}
-                </div>
-              ) : (
-                filteredAndSortedNotes.map((note) => (
-                  <Card
-                    key={note.id}
-                    className="p-4 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2">
-                        {note.emoji && <span>{note.emoji}</span>}
-                        <Badge variant="secondary">
-                          {note.type.charAt(0).toUpperCase() +
-                            note.type.slice(1)}
-                        </Badge>
-                        {note.page && (
-                          <span className="text-sm text-gray-600">
-                            Page {note.page}
-                          </span>
-                        )}
-                        {note.category && (
-                          <Badge variant="outline" className="ml-2">
-                            {note.category}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
+                  {editingNote === note.id ? (
+                    <div className="space-y-2">
+                      <Textarea
+                        value={editingContent}
+                        onChange={(e) => setEditingContent(e.target.value)}
+                        className="min-h-[100px]"
+                      />
+                      <div className="flex justify-end gap-2">
                         <Button
-                          variant="ghost"
-                          size="icon"
+                          variant="outline"
+                          size="sm"
                           onClick={() => {
-                            setEditingNote(note.id);
-                            setEditingContent(note.content);
+                            setEditingNote(null);
+                            setEditingContent("");
                           }}
                         >
-                          <Edit2 className="h-4 w-4" />
+                          Cancel
                         </Button>
                         <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteNote(note.id)}
+                          size="sm"
+                          onClick={() => handleUpdateNote(note.id)}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          Save
                         </Button>
                       </div>
                     </div>
+                  ) : (
+                    <p className="text-gray-700 whitespace-pre-line">
+                      {note.content}
+                    </p>
+                  )}
 
-                    {editingNote === note.id ? (
-                      <div className="space-y-2">
-                        <Textarea
-                          value={editingContent}
-                          onChange={(e) => setEditingContent(e.target.value)}
-                          className="min-h-[100px]"
-                        />
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setEditingNote(null);
-                              setEditingContent("");
-                            }}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => handleUpdateNote(note.id)}
-                          >
-                            Save
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-gray-700 whitespace-pre-line">
-                        {note.content}
-                      </p>
-                    )}
-
-                    <div className="mt-2 text-xs text-gray-500">
-                      {note.createdAt.toLocaleString()}
-                    </div>
-                  </Card>
-                ))
-              )}
-            </div>
+                  <div className="mt-2 text-xs text-gray-500">
+                    {note.createdAt.toLocaleString()}
+                  </div>
+                </Card>
+              ))
+            )}
           </div>
         </div>
       </div>

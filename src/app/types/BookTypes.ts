@@ -27,13 +27,14 @@ export type NoteType = "note" | "sentiment" | "critique" | "question";
 
 export interface BookNote {
   id: string;
+  title: string; // new field
   content: string;
   createdAt: Date;
-  page?: number;
   type: NoteType;
   category?: string;
   emoji?: string;
   color?: string;
+  page?: number; // optional page field
 }
 
 export interface ReadingBook extends GoogleBook {
