@@ -140,47 +140,52 @@ const ReadingListPage = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredBooks.map((book) => (
-              <div
+              <Link
+                href={`/reading-list/${book.id}`}
                 key={book.id}
-                className="bg-white rounded-lg shadow-md overflow-hidden"
+                className="block transition-all hover:scale-[1.02] hover:shadow-lg"
               >
-                <div className="p-4 flex gap-4">
-                  <Image
-                    src={
-                      book.volumeInfo.imageLinks?.thumbnail ||
-                      "/placeholder.png"
-                    }
-                    alt={book.volumeInfo.title}
-                    width={80}
-                    height={120}
-                    className="object-cover"
-                  />
-                  <div className="flex flex-col justify-between">
-                    <div>
-                      <h3 className="font-semibold">{book.volumeInfo.title}</h3>
-                      <p className="text-sm text-gray-600">
-                        {book.volumeInfo.authors?.join(", ")}
-                      </p>
-                    </div>
-                    <div className="space-y-1">
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full ${
-                          book.readingStatus === "to-read"
-                            ? "bg-blue-100 text-blue-800"
-                            : book.readingStatus === "in-progress"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-green-100 text-green-800"
-                        }`}
-                      >
-                        {book.readingStatus.replace("-", " ").toUpperCase()}
-                      </span>
-                      <p className="text-xs text-gray-500">
-                        Added: {book.addedAt.toLocaleDateString()}
-                      </p>
+                <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                  <div className="p-4 flex gap-4">
+                    <Image
+                      src={
+                        book.volumeInfo.imageLinks?.thumbnail ||
+                        "/placeholder.png"
+                      }
+                      alt={book.volumeInfo.title}
+                      width={80}
+                      height={120}
+                      className="object-cover rounded-md"
+                    />
+                    <div className="flex flex-col justify-between flex-1">
+                      <div>
+                        <h3 className="font-semibold line-clamp-2">
+                          {book.volumeInfo.title}
+                        </h3>
+                        <p className="text-sm text-gray-600 line-clamp-1">
+                          {book.volumeInfo.authors?.join(", ")}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full ${
+                            book.readingStatus === "to-read"
+                              ? "bg-blue-100 text-blue-800"
+                              : book.readingStatus === "in-progress"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-green-100 text-green-800"
+                          }`}
+                        >
+                          {book.readingStatus.replace("-", " ").toUpperCase()}
+                        </span>
+                        <p className="text-xs text-gray-500">
+                          Added: {book.addedAt.toLocaleDateString()}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

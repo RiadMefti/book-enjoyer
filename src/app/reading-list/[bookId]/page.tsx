@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, use } from "react";
 import { Button } from "@/components/ui/button";
 import { BookNoteInput } from "@/components/BookNoteInput";
 import { ReadingBook, BookNote, ReadingStatus } from "@/app/types/BookTypes";
@@ -20,7 +20,6 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 
-const mockBookId = "kotPYEqx7kMC";
 
 const getHighResBookCover = (imageLinks?: {
   extraLarge?: string;
@@ -62,8 +61,16 @@ const calculateReadingTime = (pageCount: number) => {
   const minutes = totalMinutes % 60;
   return `~${hours}h ${minutes}m`;
 };
+type Props = {
+  params: Promise<{
+    bookId: string
+  }>
+}
 
-const BookPage = () => {
+const BookPage = ({ params }: Props) => {
+  const { bookId } = use(params); // Unwrap params with React.use()
+  
+  
   const [book, setBook] = useState<ReadingBook | null>(null);
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState<BookNote[]>([]);
@@ -77,7 +84,7 @@ const BookPage = () => {
     const fetchBook = async () => {
       try {
         const response = await fetch(
-          `https://www.googleapis.com/books/v1/volumes/${mockBookId}`
+          `https://www.googleapis.com/books/v1/volumes/${bookId}`
         );
         const bookData = await response.json();
 
