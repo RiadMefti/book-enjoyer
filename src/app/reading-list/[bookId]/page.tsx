@@ -11,6 +11,14 @@ import Image from "next/image";
 import { toast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+// New imports for type filter dropdown
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 const mockBookId = "kotPYEqx7kMC";
 
@@ -60,6 +68,7 @@ const BookPage = () => {
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState<BookNote[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedType, setSelectedType] = useState<string>("all"); // new state for type filter
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState("");
   const [imageError, setImageError] = useState(false);
@@ -144,13 +153,28 @@ const BookPage = () => {
   const filteredAndSortedNotes = notes
     .filter((note) => {
       const term = searchTerm.toLowerCase();
-      return (
+      const matchesSearch =
         note.title.toLowerCase().includes(term) ||
-        note.content.toLowerCase().includes(term) ||
-        note.type.toLowerCase().includes(term)
-      );
+        note.content.toLowerCase().includes(term);
+      const matchesType =
+        selectedType === "all"
+          ? true
+          : note.type.toLowerCase() === selectedType;
+      return matchesSearch && matchesType;
     })
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+  // Function to pick note styling based on type
+  const getNoteCardClasses = (type: string) => {
+    switch (type) {
+      case "question":
+        return "border-l-4 border-blue-500";
+      case "critique":
+        return "border-l-4 border-red-500";
+      default: // "note"
+        return "border-l-4 border-yellow-500";
+    }
+  };
 
   if (loading) {
     return (
@@ -294,16 +318,34 @@ const BookPage = () => {
 
         {/* Notes Section */}
         <div className="bg-white rounded-lg shadow-md p-8">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">Notes & Thoughts</h2>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <Input
-                placeholder="Search notes (by title, content, type)..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-64"
-              />
+            <div className="flex gap-4 mt-4 sm:mt-0">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <Input
+                  placeholder="Search notes (by title or content)..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-64"
+                />
+              </div>
+              {/* New filter dropdown for note type */}
+              <Select
+                value={selectedType}
+                onValueChange={(value: string) => setSelectedType(value)}
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Filter By Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="note">Note</SelectItem>
+                  <SelectItem value="question">Question</SelectItem>
+                  <SelectItem value="critique">Critique</SelectItem>
+                  <SelectItem value="sentiment">Sentiment</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -318,7 +360,9 @@ const BookPage = () => {
               filteredAndSortedNotes.map((note) => (
                 <Card
                   key={note.id}
-                  className="p-4 hover:shadow-md transition-shadow"
+                  className={`p-4 hover:shadow-md transition-shadow ${getNoteCardClasses(
+                    note.type
+                  )}`}
                 >
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center gap-2">
