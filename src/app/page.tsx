@@ -4,21 +4,21 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import Image from "next/image";
-import { Book } from "./types/BookTypes";
+import { GoogleBook } from "./types/BookTypes";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface SearchResponse {
-  items?: Book[];
+  items?: GoogleBook[];
 }
 
 const BookSearch = () => {
   const [query, setQuery] = useState("");
-  const [previewBooks, setPreviewBooks] = useState<Book[]>([]);
+  const [previewBooks, setPreviewBooks] = useState<GoogleBook[]>([]);
   const [loading, setLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [searchTimeout, setSearchTimeout] = useState<number | undefined>();
-  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [selectedBook, setSelectedBook] = useState<GoogleBook | null>(null);
 
   const searchBooks = async (searchQuery: string) => {
     if (!searchQuery.trim()) {
