@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import Image from "next/image";
-import { GoogleBook } from "../types/BookTypes";
+import { GoogleBook } from "../../types/BookTypes";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
