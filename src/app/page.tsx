@@ -1,3 +1,4 @@
+"use client"; 
 import { Button } from "@/components/ui/button";
 import {
   Book,
@@ -11,6 +12,10 @@ import {
 import Link from "next/link";
 
 export default function LandingPage() {
+  const scrollToFeatures = () => {
+    document.getElementById("features")?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
@@ -37,16 +42,16 @@ export default function LandingPage() {
               variant="outline"
               size="lg"
               className="w-full sm:w-auto"
-              asChild
+              onClick={scrollToFeatures}
             >
-              <Link href="/books">Explore Library</Link>
+              Explore Features
             </Button>
           </div>
         </div>
       </section>
 
       {/* Core Features Section */}
-      <section className="py-16 md:py-20">
+      <section id="features" className="py-16 md:py-20">
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-12">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
