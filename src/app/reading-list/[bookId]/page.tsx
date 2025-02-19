@@ -367,10 +367,9 @@ const BookPage = ({ params }: Props) => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All</SelectItem>
-                      <SelectItem value="note">Note</SelectItem>
-                      <SelectItem value="question">Question</SelectItem>
-                      <SelectItem value="critique">Critique</SelectItem>
-                      <SelectItem value="sentiment">Sentiment</SelectItem>
+                      <SelectItem value="note">💭 Note</SelectItem>
+                      <SelectItem value="question">❓ Question</SelectItem>
+                      <SelectItem value="critique">🤔 Critique</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
