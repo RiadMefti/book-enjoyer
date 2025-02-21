@@ -3,7 +3,12 @@
 import React, { useState, useEffect, use } from "react";
 import { Button } from "@/components/ui/button";
 import { BookNoteInput } from "@/components/BookNoteInput";
-import { ReadingBook, BookNote, ReadingStatus } from "@/app/types/BookTypes";
+import {
+  ReadingBook,
+  BookNote,
+  ReadingStatus,
+  NoteType,
+} from "@/app/types/BookTypes";
 import { Input } from "@/components/ui/input";
 import { Search, Edit2, Trash2, Star, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +25,12 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { getBookById } from "@/app/actions/books";
+import {
+  getNotesForBook,
+  createNote,
+  updateNote,
+  deleteNote,
+} from "@/app/actions/notes";
 
 const getHighResBookCover = (imageLinks?: {
   extraLarge?: string;
@@ -80,11 +91,12 @@ const BookPage = ({ params }: Props) => {
   const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
-    const fetchBook = async () => {
+    const fetchBookAndNotes = async () => {
       try {
-        const [googleResponse, dbBook] = await Promise.all([
+        const [googleResponse, dbBook, dbNotes] = await Promise.all([
           fetch(`https://www.googleapis.com/books/v1/volumes/${bookId}`),
           getBookById(bookId),
+          getNotesForBook(bookId),
         ]);
 
         const bookData = await googleResponse.json();
@@ -103,11 +115,23 @@ const BookPage = ({ params }: Props) => {
           currentPage: 0,
           notes: [],
         });
+
+        // Convert DB notes to BookNote type
+        const formattedNotes: BookNote[] = dbNotes.map((note) => ({
+          id: note.id.toString(),
+          title: note.title,
+          content: note.content,
+          type: note.type as NoteType,
+          page: note.page || undefined,
+          createdAt: new Date(note.createdAt),
+        }));
+
+        setNotes(formattedNotes);
       } catch (error) {
-        console.error("Error fetching book:", error);
+        console.error("Error fetching data:", error);
         toast({
           title: "Error",
-          description: "Failed to load book details",
+          description: "Failed to load book details and notes",
           variant: "destructive",
         });
       } finally {
@@ -115,7 +139,7 @@ const BookPage = ({ params }: Props) => {
       }
     };
 
-    fetchBook();
+    fetchBookAndNotes();
   }, [bookId]);
 
   const handleStatusChange = (newStatus: ReadingStatus) => {
@@ -128,38 +152,97 @@ const BookPage = ({ params }: Props) => {
     }
   };
 
-  const handleAddNote = (note: Omit<BookNote, "id" | "createdAt">) => {
-    const newNote: BookNote = {
-      ...note,
-      id: Math.random().toString(36).substr(2, 9),
-      createdAt: new Date(),
-    };
-    setNotes([...notes, newNote]);
-    toast({
-      title: "Note added",
-      description: `Added new ${note.type}`,
-    });
+  const handleAddNote = async (note: Omit<BookNote, "id" | "createdAt">) => {
+    try {
+      const newNote = await createNote(bookId, {
+        title: note.title,
+        content: note.content,
+        type: note.type as NoteType, // Explicitly type as NoteType
+        page: note.page,
+      });
+
+      setNotes((prev) => [
+        {
+          ...newNote,
+          id: newNote.id.toString(),
+          createdAt: new Date(newNote.createdAt),
+        } as BookNote,
+        ...prev,
+      ]);
+
+      toast({
+        title: "Note added",
+        description: `Added new ${note.type}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          "Failed to add note" +
+          (error instanceof Error ? error.message : "Unknown error"),
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleUpdateNote = (noteId: string) => {
-    const updatedNotes = notes.map((note) =>
-      note.id === noteId ? { ...note, content: editingContent } : note
-    );
-    setNotes(updatedNotes);
-    setEditingNote(null);
-    setEditingContent("");
-    toast({
-      title: "Note updated",
-      description: "Your note has been saved",
-    });
+  const handleUpdateNote = async (noteId: string) => {
+    try {
+      const note = notes.find((n) => n.id === noteId);
+      if (!note) return;
+
+      const updatedNote = await updateNote(parseInt(noteId), {
+        title: note.title,
+        content: editingContent,
+        type: note.type,
+        page: note.page,
+      });
+
+      setNotes((prev) =>
+        prev.map((n) =>
+          n.id === noteId
+            ? {
+                ...n,
+                content: editingContent,
+                updatedAt: new Date(updatedNote.updatedAt),
+              }
+            : n
+        )
+      );
+
+      setEditingNote(null);
+      setEditingContent("");
+      toast({
+        title: "Note updated",
+        description: "Your note has been saved",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          "Failed to update note " +
+          (error instanceof Error ? error.message : "Unknown error"),
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDeleteNote = (noteId: string) => {
-    setNotes(notes.filter((note) => note.id !== noteId));
-    toast({
-      title: "Note deleted",
-      variant: "destructive",
-    });
+  const handleDeleteNote = async (noteId: string) => {
+    try {
+      await deleteNote(parseInt(noteId));
+      setNotes((prev) => prev.filter((n) => n.id !== noteId));
+      toast({
+        title: "Note deleted",
+        variant: "destructive",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          "Failed to delete note" +
+          (error instanceof Error ? error.message : "Unknown error"),
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredAndSortedNotes = notes
