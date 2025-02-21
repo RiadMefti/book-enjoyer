@@ -7,6 +7,7 @@ import Image from "next/image";
 import { GoogleBook } from "../../types/BookTypes";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { createBook } from "@/app/actions/books";
 
 interface SearchResponse {
   items?: GoogleBook[];
@@ -85,20 +86,7 @@ const BookSearch = () => {
 
   const addBookToReadingList = async (book: GoogleBook) => {
     try {
-      const response = await fetch("/api/books", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          googleBookId: book.id,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to add book");
-      }
-
+      await createBook(book.id);
       setSelectedBook(null);
       // Redirect to reading list after successful addition
       window.location.href = "/reading-list";

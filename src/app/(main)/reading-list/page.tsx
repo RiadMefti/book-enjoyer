@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import { Search, Plus } from "lucide-react";
-import { ReadingBook, ReadingStatus, DbBook } from "@/app/types/BookTypes";
+import { ReadingBook, ReadingStatus } from "@/app/types/BookTypes";
 import { getBookCoverUrl } from "@/lib/utils/books";
+import { getUserBooks } from "@/app/actions/books";
 
 const ReadingListPage = () => {
   const [books, setBooks] = useState<ReadingBook[]>([]);
@@ -20,11 +21,7 @@ const ReadingListPage = () => {
   useEffect(() => {
     const fetchBooks = async () => {
       try {
-        const userBooksResponse = await fetch("/api/books");
-        if (!userBooksResponse.ok) {
-          throw new Error("Failed to fetch books");
-        }
-        const userBooks = (await userBooksResponse.json()) as DbBook[];
+        const userBooks = await getUserBooks();
 
         const booksPromises = userBooks.map(async (userBook) => {
           const response = await fetch(

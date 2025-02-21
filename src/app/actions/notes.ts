@@ -24,10 +24,7 @@ export async function getNotesForBook(bookId: string) {
   }
 
   const book = await db.query.books.findFirst({
-    where: and(
-      eq(books.googleBookId, bookId),
-      eq(books.userId, user.id)
-    ),
+    where: and(eq(books.googleBookId, bookId), eq(books.userId, user.id)),
   });
 
   if (!book) {
@@ -35,22 +32,22 @@ export async function getNotesForBook(bookId: string) {
   }
 
   const bookNotes = await db.query.notes.findMany({
-    where: and(
-      eq(notes.bookId, book.id),
-      eq(notes.userId, user.id)
-    ),
+    where: and(eq(notes.bookId, book.id), eq(notes.userId, user.id)),
     orderBy: (notes, { desc }) => [desc(notes.createdAt)],
   });
 
   return bookNotes;
 }
 
-export async function createNote(bookId: string, data: {
-  title: string;
-  content: string;
-  type: NoteType;
-  page?: number;
-}) {
+export async function createNote(
+  bookId: string,
+  data: {
+    title: string;
+    content: string;
+    type: NoteType;
+    page?: number;
+  }
+) {
   const session = await auth();
   const userEmail = session?.user?.email;
 
@@ -67,32 +64,35 @@ export async function createNote(bookId: string, data: {
   }
 
   const book = await db.query.books.findFirst({
-    where: and(
-      eq(books.googleBookId, bookId),
-      eq(books.userId, user.id)
-    ),
+    where: and(eq(books.googleBookId, bookId), eq(books.userId, user.id)),
   });
 
   if (!book) {
     throw new Error("Book not found");
   }
 
-  const note = await db.insert(notes).values({
-    ...data,
-    bookId: book.id,
-    userId: user.id,
-  }).returning();
+  const note = await db
+    .insert(notes)
+    .values({
+      ...data,
+      bookId: book.id,
+      userId: user.id,
+    })
+    .returning();
 
   revalidatePath(`/reading-list/${bookId}`);
   return note[0];
 }
 
-export async function updateNote(noteId: number, data: {
-  title: string;
-  content: string;
-  type: NoteType;
-  page?: number;
-}) {
+export async function updateNote(
+  noteId: number,
+  data: {
+    title: string;
+    content: string;
+    type: NoteType;
+    page?: number;
+  }
+) {
   const session = await auth();
   const userEmail = session?.user?.email;
 
@@ -100,7 +100,8 @@ export async function updateNote(noteId: number, data: {
     throw new Error("Unauthorized");
   }
 
-  const updatedNote = await db.update(notes)
+  const updatedNote = await db
+    .update(notes)
     .set(data)
     .where(eq(notes.id, noteId))
     .returning();
