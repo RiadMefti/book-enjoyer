@@ -83,6 +83,31 @@ const BookSearch = () => {
     };
   }, [handleClickOutside]);
 
+  const addBookToReadingList = async (book: GoogleBook) => {
+    try {
+      const response = await fetch("/api/books", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          googleBookId: book.id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to add book");
+      }
+
+      setSelectedBook(null);
+      // Redirect to reading list after successful addition
+      window.location.href = "/reading-list";
+    } catch (error) {
+      console.error("Error adding book:", error);
+      alert("Failed to add book. Please try again.");
+    }
+  };
+
   const LoadingBookPreview = () => (
     <div className="p-4 flex items-center gap-4">
       <Skeleton className="w-12 h-16" />
@@ -222,7 +247,9 @@ const BookSearch = () => {
                     "No description available."}
                 </p>
                 <div className="flex gap-4 items-center">
-                  <Button>Add to Reading List</Button>
+                  <Button onClick={() => addBookToReadingList(selectedBook)}>
+                    Add to Reading List
+                  </Button>
                   <div className="text-sm text-gray-600">
                     <p>
                       Published:{" "}

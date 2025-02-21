@@ -20,16 +20,17 @@ export const config = {
   callbacks: {
     async signIn({ account, profile }) {
       if (account?.provider === "google" && profile?.email) {
+        const userEmail = profile.email;
         // Check if user exists
         const existingUser = await db.query.users.findFirst({
-          where: eq(users.googleId, account.providerAccountId),
+          where: eq(users.email, userEmail),
         });
 
         // If user doesn't exist, create new user
-        if (!existingUser) {
+        if (!existingUser && account.providerAccountId) {
           await db.insert(users).values({
             googleId: account.providerAccountId,
-            email: profile.email,
+            email: userEmail,
           });
         }
 

@@ -44,3 +44,12 @@ export interface ReadingBook extends GoogleBook {
   currentPage: number;
   rating?: number;
 }
+
+export interface DbBook {
+  id: number;
+  googleBookId: string;
+  userId: number;
+  status: ReadingStatus;
+  addedAt: string;
+  updatedAt: string;
+}

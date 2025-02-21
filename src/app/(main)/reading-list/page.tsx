@@ -6,19 +6,7 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import { Search, Plus } from "lucide-react";
-import { ReadingBook, ReadingStatus } from "../types/BookTypes";
-
-const mockBooksIds = [
-  "pD6arNyKyi8C", // Lord of the Rings
-  "B1hSG45JCX4C", // Dune
-  "kotPYEqx7kMC", // 1984
-];
-
-const mockReadingStatuses: { [key: string]: ReadingStatus } = {
-  pD6arNyKyi8C: "to-read",
-  B1hSG45JCX4C: "in-progress",
-  kotPYEqx7kMC: "finished",
-};
+import { ReadingBook, ReadingStatus, DbBook } from "@/app/types/BookTypes";
 
 const ReadingListPage = () => {
   const [books, setBooks] = useState<ReadingBook[]>([]);
@@ -31,15 +19,21 @@ const ReadingListPage = () => {
   useEffect(() => {
     const fetchBooks = async () => {
       try {
-        const booksPromises = mockBooksIds.map(async (id) => {
+        const userBooksResponse = await fetch("/api/books");
+        if (!userBooksResponse.ok) {
+          throw new Error("Failed to fetch books");
+        }
+        const userBooks = (await userBooksResponse.json()) as DbBook[];
+
+        const booksPromises = userBooks.map(async (userBook) => {
           const response = await fetch(
-            `https://www.googleapis.com/books/v1/volumes/${id}`
+            `https://www.googleapis.com/books/v1/volumes/${userBook.googleBookId}`
           );
           const book = await response.json();
           return {
             ...book,
-            readingStatus: mockReadingStatuses[id],
-            addedAt: new Date(Date.now() - Math.random() * 10000000000), // Random date within past ~4 months
+            readingStatus: userBook.status,
+            addedAt: new Date(userBook.addedAt),
           } as ReadingBook;
         });
 
@@ -100,7 +94,7 @@ const ReadingListPage = () => {
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">My Reading List</h1>
-          <Link href="/">
+          <Link href="/books">
             <Button>
               <Plus className="mr-2 h-4 w-4" /> Add Books
             </Button>
