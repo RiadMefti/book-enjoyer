@@ -19,6 +19,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { getBookById } from "@/app/actions/books";
 
 const getHighResBookCover = (imageLinks?: {
   extraLarge?: string;
@@ -81,11 +82,12 @@ const BookPage = ({ params }: Props) => {
   useEffect(() => {
     const fetchBook = async () => {
       try {
-        const response = await fetch(
-          `https://www.googleapis.com/books/v1/volumes/${bookId}`
-        );
-        const bookData = await response.json();
+        const [googleResponse, dbBook] = await Promise.all([
+          fetch(`https://www.googleapis.com/books/v1/volumes/${bookId}`),
+          getBookById(bookId),
+        ]);
 
+        const bookData = await googleResponse.json();
         const cleanedDescription = bookData.volumeInfo.description
           ? cleanHtmlTags(bookData.volumeInfo.description)
           : "No description available.";
@@ -96,20 +98,25 @@ const BookPage = ({ params }: Props) => {
             ...bookData.volumeInfo,
             description: cleanedDescription,
           },
-          readingStatus: "in-progress" as ReadingStatus,
-          addedAt: new Date(),
+          readingStatus: dbBook?.status ?? ("to-read" as ReadingStatus),
+          addedAt: dbBook ? new Date(dbBook.addedAt) : new Date(),
           currentPage: 0,
           notes: [],
         });
       } catch (error) {
         console.error("Error fetching book:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load book details",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
     };
 
     fetchBook();
-  }, []);
+  }, [bookId]);
 
   const handleStatusChange = (newStatus: ReadingStatus) => {
     if (book) {
