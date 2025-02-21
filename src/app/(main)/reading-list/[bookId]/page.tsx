@@ -24,7 +24,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { getBookById } from "@/app/actions/books";
+import { getBookById, updateBookStatus } from "@/app/actions/books";
 import {
   getNotesForBook,
   createNote,
@@ -142,13 +142,28 @@ const BookPage = ({ params }: Props) => {
     fetchBookAndNotes();
   }, [bookId]);
 
-  const handleStatusChange = (newStatus: ReadingStatus) => {
+  const handleStatusChange = async (newStatus: ReadingStatus) => {
     if (book) {
-      setBook({ ...book, readingStatus: newStatus });
-      toast({
-        title: "Reading status updated",
-        description: `Book marked as "${newStatus.replace("-", " ")}"`,
-      });
+      try {
+        // Optimistic update
+        setBook({ ...book, readingStatus: newStatus });
+
+        // Update in database
+        await updateBookStatus(bookId, newStatus);
+
+        toast({
+          title: "Reading status updated",
+          description: `Book marked as "${newStatus.replace("-", " ")}"`,
+        });
+      } catch (error) {
+        // Revert optimistic update on error
+        setBook({ ...book });
+        toast({
+          title: "Error",
+          description: "Failed to update reading status"+ (error instanceof Error ? error.message : 'Unknown error'),
+          variant: "destructive",
+        });
+      }
     }
   };
 
