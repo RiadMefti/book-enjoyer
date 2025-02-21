@@ -31,31 +31,7 @@ import {
   updateNote,
   deleteNote,
 } from "@/app/actions/notes";
-
-const getHighResBookCover = (imageLinks?: {
-  extraLarge?: string;
-  large?: string;
-  medium?: string;
-  small?: string;
-  thumbnail?: string;
-}) => {
-  if (!imageLinks) return "/placeholder-book.jpg";
-
-  const imageUrl =
-    imageLinks.extraLarge ||
-    imageLinks.large ||
-    imageLinks.medium ||
-    imageLinks.small ||
-    imageLinks.thumbnail;
-
-  if (!imageUrl) return "/placeholder-book.jpg";
-
-  return imageUrl
-    .replace("http://", "https://")
-    .replace("zoom=1", "zoom=6")
-    .replace("&edge=curl", "")
-    .replace("&source=gbs_api", "");
-};
+import { getBookCoverUrl } from "@/lib/utils/books";
 
 const cleanHtmlTags = (text: string) => {
   return text
@@ -160,7 +136,9 @@ const BookPage = ({ params }: Props) => {
         setBook({ ...book });
         toast({
           title: "Error",
-          description: "Failed to update reading status"+ (error instanceof Error ? error.message : 'Unknown error'),
+          description:
+            "Failed to update reading status" +
+            (error instanceof Error ? error.message : "Unknown error"),
           variant: "destructive",
         });
       }
@@ -334,7 +312,7 @@ const BookPage = ({ params }: Props) => {
                     src={
                       imageError
                         ? "/placeholder-book.jpg"
-                        : getHighResBookCover(book.volumeInfo?.imageLinks)
+                        : getBookCoverUrl(book.volumeInfo?.imageLinks, true) // Pass true for high quality
                     }
                     alt={book.volumeInfo.title}
                     fill

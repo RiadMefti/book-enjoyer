@@ -7,6 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Search, Plus } from "lucide-react";
 import { ReadingBook, ReadingStatus, DbBook } from "@/app/types/BookTypes";
+import { getBookCoverUrl } from "@/lib/utils/books";
 
 const ReadingListPage = () => {
   const [books, setBooks] = useState<ReadingBook[]>([]);
@@ -142,10 +143,7 @@ const ReadingListPage = () => {
                 <div className="bg-white rounded-lg shadow-md overflow-hidden">
                   <div className="p-4 flex gap-4">
                     <Image
-                      src={
-                        book.volumeInfo.imageLinks?.thumbnail ||
-                        "/placeholder.png"
-                      }
+                      src={getBookCoverUrl(book.volumeInfo.imageLinks)}
                       alt={book.volumeInfo.title}
                       width={80}
                       height={120}
