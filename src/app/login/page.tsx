@@ -8,7 +8,8 @@ import Link from "next/link";
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/";
+  const callbackUrl =
+    searchParams.get("callbackUrl") || `${process.env.NEXT_PUBLIC_APP_URL}/`;
 
   return (
     <div className="min-h-screen flex flex-col">
