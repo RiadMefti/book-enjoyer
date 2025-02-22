@@ -20,6 +20,8 @@ const BookSearch = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [searchTimeout, setSearchTimeout] = useState<number | undefined>();
   const [selectedBook, setSelectedBook] = useState<GoogleBook | null>(null);
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
 
   const searchBooks = async (searchQuery: string) => {
     if (!searchQuery.trim()) {
@@ -94,6 +96,17 @@ const BookSearch = () => {
       console.error("Error adding book:", error);
       alert("Failed to add book. Please try again.");
     }
+  };
+
+  const generateAISummary = async () => {
+    setIsGeneratingSummary(true);
+    // Simulate AI API call with timeout
+    setTimeout(() => {
+      setAiSummary(
+        "This is a simulated AI-generated summary of the book. It would include key plot points, main characters, themes, and critical analysis. The summary would be comprehensive yet concise, helping readers quickly understand the book's content and significance. Multiple paragraphs would break down different aspects of the book."
+      );
+      setIsGeneratingSummary(false);
+    }, 2000);
   };
 
   const LoadingBookPreview = () => (
@@ -238,6 +251,20 @@ const BookSearch = () => {
                   <Button onClick={() => addBookToReadingList(selectedBook)}>
                     Add to Reading List
                   </Button>
+                  <Button
+                    onClick={generateAISummary}
+                    variant="outline"
+                    disabled={isGeneratingSummary}
+                  >
+                    {isGeneratingSummary ? (
+                      <>
+                        <span className="animate-spin mr-2">⏳</span>
+                        Generating Summary...
+                      </>
+                    ) : (
+                      "Generate AI Summary"
+                    )}
+                  </Button>
                   <div className="text-sm text-gray-600">
                     <p>
                       Published:{" "}
@@ -248,6 +275,30 @@ const BookSearch = () => {
                     </p>
                   </div>
                 </div>
+
+                {/* AI Summary Section */}
+                {(isGeneratingSummary || aiSummary) && (
+                  <div className="mt-8 border-t pt-6">
+                    <h3 className="text-xl font-semibold mb-4">
+                      AI Book Summary
+                    </h3>
+                    {isGeneratingSummary ? (
+                      <div className="space-y-4">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-5/6" />
+                      </div>
+                    ) : (
+                      <div className="prose max-w-none">
+                        <p className="text-gray-700 leading-relaxed">
+                          {aiSummary}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
