@@ -8,6 +8,9 @@ import { GoogleBook } from "../../types/BookTypes";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { createBook } from "@/app/actions/books";
+import { generateBookSummary } from "@/app/actions/ai";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface SearchResponse {
   items?: GoogleBook[];
@@ -21,7 +24,7 @@ const BookSearch = () => {
   const [searchTimeout, setSearchTimeout] = useState<number | undefined>();
   const [selectedBook, setSelectedBook] = useState<GoogleBook | null>(null);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
-  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [bookSummary, setBookSummary] = useState<string | null>(null);
 
   const searchBooks = async (searchQuery: string) => {
     if (!searchQuery.trim()) {
@@ -98,15 +101,21 @@ const BookSearch = () => {
     }
   };
 
-  const generateAISummary = async () => {
+  const handleSummary = async () => {
+    if (!selectedBook) return;
     setIsGeneratingSummary(true);
-    // Simulate AI API call with timeout
-    setTimeout(() => {
-      setAiSummary(
-        "This is a simulated AI-generated summary of the book. It would include key plot points, main characters, themes, and critical analysis. The summary would be comprehensive yet concise, helping readers quickly understand the book's content and significance. Multiple paragraphs would break down different aspects of the book."
+    try {
+      const summary = await generateBookSummary(
+        selectedBook.volumeInfo.title,
+        selectedBook.volumeInfo.authors?.join(", ") || "Unknown Author",
+        selectedBook.volumeInfo.description || "No description available"
       );
+      setBookSummary(summary);
+    } catch (error) {
+      alert("Could not retrieve summary." + error);
+    } finally {
       setIsGeneratingSummary(false);
-    }, 2000);
+    }
   };
 
   const LoadingBookPreview = () => (
@@ -252,17 +261,17 @@ const BookSearch = () => {
                     Add to Reading List
                   </Button>
                   <Button
-                    onClick={generateAISummary}
+                    onClick={handleSummary}
                     variant="outline"
                     disabled={isGeneratingSummary}
                   >
                     {isGeneratingSummary ? (
                       <>
                         <span className="animate-spin mr-2">⏳</span>
-                        Generating Summary...
+                        Summarizing...
                       </>
                     ) : (
-                      "Generate AI Summary"
+                      "Get Summary"
                     )}
                   </Button>
                   <div className="text-sm text-gray-600">
@@ -276,26 +285,20 @@ const BookSearch = () => {
                   </div>
                 </div>
 
-                {/* AI Summary Section */}
-                {(isGeneratingSummary || aiSummary) && (
-                  <div className="mt-8 border-t pt-6">
-                    <h3 className="text-xl font-semibold mb-4">
-                      AI Book Summary
-                    </h3>
+                {/* Summary Section */}
+                {(isGeneratingSummary || bookSummary) && (
+                  <div className="mt-8 bg-blue-50 border border-blue-200 p-6 rounded-lg">
+                    <h3 className="text-xl font-medium mb-4">Book Summary</h3>
                     {isGeneratingSummary ? (
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                         <Skeleton className="h-4 w-full" />
                         <Skeleton className="h-4 w-full" />
                         <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-5/6" />
                       </div>
                     ) : (
-                      <div className="prose max-w-none">
-                        <p className="text-gray-700 leading-relaxed">
-                          {aiSummary}
-                        </p>
-                      </div>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {bookSummary || ""}
+                      </ReactMarkdown>
                     )}
                   </div>
                 )}
