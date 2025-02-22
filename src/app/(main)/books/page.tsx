@@ -11,6 +11,7 @@ import { createBook } from "@/app/actions/books";
 import { generateBookSummary } from "@/app/actions/ai";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { fetchRecommendedBooks } from "@/app/actions/recommendations";
 
 interface SearchResponse {
   items?: GoogleBook[];
@@ -25,6 +26,9 @@ const BookSearch = () => {
   const [selectedBook, setSelectedBook] = useState<GoogleBook | null>(null);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [bookSummary, setBookSummary] = useState<string | null>(null);
+  const [recommendedBooks, setRecommendedBooks] = useState<GoogleBook[]>([]);
+  const [isLoadingRecommendations, setIsLoadingRecommendations] =
+    useState(false);
 
   const searchBooks = async (searchQuery: string) => {
     if (!searchQuery.trim()) {
@@ -74,6 +78,57 @@ const BookSearch = () => {
       }
     };
   }, [query]);
+
+  // Naive parser: looks for lines with "GoogleBookID: something"
+  // Parse AI response to get just the titles
+  function parseTitles(aiResponse: string): string[] {
+    return aiResponse
+      .split("\n")
+      .filter((line) => line.startsWith("TITLE:"))
+      .map((line) => line.replace("TITLE:", "").trim());
+  }
+
+  // Search Google Books API for a specific title
+  async function searchBookByTitle(title: string): Promise<GoogleBook | null> {
+    try {
+      const response = await fetch(
+        `https://www.googleapis.com/books/v1/volumes?q=intitle:"${encodeURIComponent(
+          title
+        )}"&maxResults=1`
+      );
+      const data: SearchResponse = await response.json();
+      return data.items?.[0] || null;
+    } catch (error) {
+      console.error(`Error searching for book "${title}":`, error);
+      return null;
+    }
+  }
+
+  // Fetch recommendations
+  async function loadRecommendations() {
+    setIsLoadingRecommendations(true);
+    try {
+      const aiResponse = await fetchRecommendedBooks();
+      if (!aiResponse) return;
+
+      const titles = parseTitles(aiResponse);
+      const books = await Promise.all(
+        titles.map((title) => searchBookByTitle(title))
+      );
+
+      setRecommendedBooks(
+        books.filter((book): book is GoogleBook => book !== null)
+      );
+    } catch (error) {
+      console.error("Error loading recommendations:", error);
+    } finally {
+      setIsLoadingRecommendations(false);
+    }
+  }
+
+  useEffect(() => {
+    loadRecommendations();
+  }, []);
 
   const handleClickOutside = useCallback((event: MouseEvent) => {
     const target = event.target as HTMLElement;
@@ -158,11 +213,12 @@ const BookSearch = () => {
         {/* Hero Search Section */}
         <div
           className={`transition-all duration-300 ${
-            selectedBook ? "h-24" : "h-[70vh]"
-          } flex flex-col justify-center`}
+            selectedBook ? "h-24" : "h-[30vh]" // Reduced from 40vh to 30vh
+          } flex flex-col justify-start pt-8`} // Reduced from pt-12 to pt-8
         >
           <h1
             className={`text-center mb-6 transition-all duration-300 ${
+              // Reduced from mb-8 to mb-6
               selectedBook ? "text-2xl" : "text-4xl"
             }`}
           >
@@ -227,6 +283,53 @@ const BookSearch = () => {
             )}
           </div>
         </div>
+
+        {/* Recommendations Section with reduced top margin */}
+        {(isLoadingRecommendations || recommendedBooks.length > 0) &&
+          !selectedBook && (
+            <div className="-mt-4 bg-white p-6 rounded-md shadow-md">
+              {" "}
+              {/* Changed from mt-2 to -mt-4 */}
+              <h2 className="text-2xl font-semibold mb-4">
+                Recommended for You
+              </h2>
+              <div className="space-y-2">
+                {isLoadingRecommendations ? (
+                  <div className="space-y-4">
+                    <LoadingBookPreview />
+                    <LoadingBookPreview />
+                    <LoadingBookPreview />
+                  </div>
+                ) : (
+                  recommendedBooks.map((book) => (
+                    <div
+                      key={book.id}
+                      className="p-4 hover:bg-gray-50 cursor-pointer flex items-center gap-4"
+                      onClick={() => setSelectedBook(book)}
+                    >
+                      <Image
+                        src={
+                          book.volumeInfo.imageLinks?.thumbnail ||
+                          "/api/placeholder/40/60"
+                        }
+                        alt={book.volumeInfo.title}
+                        width={40}
+                        height={60}
+                        className="w-12 h-16 object-cover"
+                      />
+                      <div>
+                        <p className="font-medium">{book.volumeInfo.title}</p>
+                        <p className="text-sm text-gray-600">
+                          {book.volumeInfo.authors?.join(", ") ||
+                            "Unknown Author"}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
 
         {/* Book Details Section */}
         {selectedBook ? (
